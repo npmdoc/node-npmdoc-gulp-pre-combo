@@ -1,0 +1,176 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a>gulp-pre-combo (v1.0.14)</a>
+</h1>
+<h4>A gulp plugin to handle relative-path in html file.</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-pre-combo">module gulp-pre-combo</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-pre-combo.gulp-pre-combo">
+            function <span class="apidocSignatureSpan"></span>gulp-pre-combo
+            <span class="apidocSignatureSpan">(repoinfo)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-pre-combo" id="apidoc.module.gulp-pre-combo">module gulp-pre-combo</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-pre-combo.gulp-pre-combo" id="apidoc.element.gulp-pre-combo.gulp-pre-combo">
+        function <span class="apidocSignatureSpan"></span>gulp-pre-combo
+        <span class="apidocSignatureSpan">(repoinfo)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">gulp-pre-combo = function (repoinfo) {
+
+	return through.obj(function (file, enc, cb) {
+
+		var pathArr = file.path.split('/');
+		pathArr.pop();
+		var thisPath = pathArr.join('/') + '/',
+			chunk = String(file.contents);
+		<span class="apidocCodeCommentSpan">/**
+		 * å¤„ç†åŽç¼€å’Œç›¸å¯¹è·¯ç»
+		 * @param  {string} p æ–‡ä»¶å==&gt;like index.js
+		 * @return {string}   è·¯å¾„å==&gt;line HFE/generator-test/0.1.0/pages/abc/index.js
+		 */
+</span>		function handlePath(p) {
+			p = path.join(thisPath, addSuffix(p));
+			var projectname = file.cwd.split('/').pop(),
+				relative = p.replace(file.base, ''),
+				version = repoinfo.version,
+				group = repoinfo.group;
+			return (group + '/' + projectname + '/' + version + '/' + relative);
+		}
+
+		/**
+		 * å¤„ç†æ–‡ä»¶å:index.js ==&gt; index.min.js
+		 */
+		function addSuffix(p) {
+			var pAr = p.split('.'),
+				suffix = pAr.pop();
+			return pAr.join('.') + '.' + suffix;
+		}
+		// var commentMarker = 'unUseComboMaker';
+		// var regStart = new RegExp('&lt;!--\\s*' + commentMarker + '\\s*--&gt;');
+		// var regEnd = new RegExp('(?:&lt;!--\\s*)*\\/' + commentMarker + '\\s*--&gt;');
+		var lines = chunk.replace(/\r\n/g, '\n').split(/\n/);
+		var inside = false;
+		var newChunk = [];
+		lines.forEach(function (line) {
+			// var build = regStart.test(line);
+			// var endbuild = regEnd.test(line);
+			// if (build) {
+			// 	inside = true;
+			// }
+			// if (endbuild) {
+			// 	inside = false;
+			// }
+
+			if (!(line.match('data-ignore="true"') || line.match('data-ignore=\'true\''))) {
+				line = line.replace(/&lt;script[^&gt;]+?src="([^"]+)"[^&gt;]*&gt;&lt;\/script&gt;/igm, function ($, $1) {
+					if ($1.indexOf('http://') === 0 || $1.indexOf('https://') === 0 || $1.indexOf('//') === 0) {
+						var finalPath = $1;
+					} else {
+						var finalPath = handlePath($1);
+					}
+					return '&lt;script src=\"' + finalPath + '\"&gt;&lt;/script&gt;';
+				});
+
+				line = line.replace(/&lt;link[^&gt;]+?href="([^"]+?)"[^&gt;]+?rel="stylesheet"[^&gt;]*&gt;/igm, function ($, $1) {
+					if ($1.indexOf('http://') === 0 || $1.indexOf('https://') === 0 || $1.indexOf('//') === 0) {
+						var finalPath = $1;
+					} else {
+						var finalPath = handlePath($1);
+					}
+					return '&lt;link href=\"' + finalPath + '\" rel="stylesheet"&gt;';
+				});
+
+				line = line.replace(/&lt;link[^&gt;]+?rel="stylesheet"[^&gt;]+?href="([^"]+?)"[^&gt;]*&gt;/igm, function ($, $1) {
+					if ($1.indexOf('http://') === 0 || $1.indexOf('https://') === 0 || $1.indexOf('//') === 0) {
+						var finalPath = $1;
+					} else {
+						var finalPath = handlePath($1);
+					}
+					return '&lt;link rel="stylesheet" href=\"' + finalPath + '\"&gt;';
+				});
+			}
+			newChunk.push(line)
+		});
+
+		var chunk = newChunk.join('\n');
+		file.contents = new Buffer(chunk);
+
+		cb(null, file);
+	});
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
